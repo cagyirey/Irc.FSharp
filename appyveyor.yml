@@ -1,4 +1,9 @@
 version: 1.0.{build}
 
+image: Visual Studio 2017
+
+clone_folder: c:\build\ircfsharp
+
 build_script:
-  - ./build.cmd
+
+- cmd: ./build.cmd

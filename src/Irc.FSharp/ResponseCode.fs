@@ -5,6 +5,7 @@ open System.Reflection
 
 let private responses = 
     query { 
+        // TODO: reflect current type at start up
         for responseCode in Type.GetType("Irc.FSharp.ResponseCode, Irc.FSharp").GetTypeInfo().DeclaredFields do
             where (responseCode.IsLiteral && responseCode.FieldType = typeof<string>)
             select (responseCode.GetRawConstantValue() :?> string, responseCode.Name)

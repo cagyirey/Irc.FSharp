@@ -13,6 +13,7 @@ type IrcRecipient =
 
     override this.ToString() = 
         match this with
+        // TODO: possibly use bprintf as this can be called often
         | Channel chstr -> sprintf "#%s" chstr
         | User(nick, user, host) -> 
             let user = Option.fold (fun _ u -> "!" + u) "" user

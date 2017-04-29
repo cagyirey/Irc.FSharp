@@ -4,6 +4,7 @@
 module RFC2812 =
 
     type IrcMessage with
+
         static member pass password = IrcMessage(Empty, "PASS", [password])
 
         static member nick nickname = IrcMessage(Empty, "NICK", [nickname])
