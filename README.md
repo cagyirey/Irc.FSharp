@@ -37,25 +37,25 @@ module Program =
                     // Assume it's safe to join channels after RPL_ENDOFMOTD or ERR_NOMOTD.
                     | NumericResponse (int ResponseCode.RPL_ENDOFMOTD)
                     | NumericResponse (int ResponseCode.ERR_NOMOTD) ->
-                        client.WriteMessage (Ircessage.join channels)
+                        client.WriteMessage (IrcMessage.join channels)
                     | _ -> return! loop ()
                 }
             loop ()
 
-        do client.WriteMessage (Ircessage.nick nick)
-           client.WriteMessage (Ircessage.user user "0" user)
+        do client.WriteMessage (IrcMessage.nick nick)
+           client.WriteMessage (IrcMessage.user user "0" user)
         handleMotd () |> Async.RunSynchronously
 
         client.MessageReceived
         |> Event.choose(fun msg ->
             match msg with
-            | PRIVMSG(User sender as prefix, User target, message) when target = nick -> Some <| Ircessage.privmsg [ sender ] (sprintf "%s: Hello!" sender)
-            | PRIVMSG(User sender, Channel ch, message) -> Some <| Ircessage.privmsg [ch] (sprintf "%s: Hello!" sender)
+            | PRIVMSG(User sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
+            | PRIVMSG(User sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "%s: Hello!" sender)
             | _ -> None)
         |> Event.add(client.WriteMessage)
 
-		Application.Run()
-		0
+	Application.Run()
+	0
 ```
 
 ### Project Status
