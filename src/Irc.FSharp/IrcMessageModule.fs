@@ -6,7 +6,7 @@ open Irc.FSharp.Parser
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module IrcMessage = 
 
-    let withPrefix (prefix: IrcRecipient) (message: IrcMessage) =
+    let withPrefix (prefix: IrcPrefix) (message: IrcMessage) =
         match message with
         | IrcMessage(_, cmd, args) -> IrcMessage(prefix, cmd, args)
 
@@ -15,7 +15,7 @@ module IrcMessage =
         | true, x when x = responseCode -> Some ()
         | _, _ -> None
 
-    type IrcRecipient with
+    type IrcPrefix with
         static member ParseMany(value) =
             (Parser.parseRecipients >> Parser.unboxParserResult) value
 

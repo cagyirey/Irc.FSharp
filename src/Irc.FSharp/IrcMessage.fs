@@ -5,7 +5,7 @@ open System.Text
 
 open Microsoft.FSharp.Core.Printf
 
-type IrcRecipient = 
+type IrcPrefix = 
     | Channel of chstring: string
     | User of nick: string * user: string option * host: string option
     | Server of host: string
@@ -22,8 +22,26 @@ type IrcRecipient =
         | Server hostname -> hostname
         | Empty -> String.Empty
 
+[<AutoOpen>]
+module IrcPrefix =
+
+    let (|Username|_|) =
+        function
+        | User(_, Some uname, _) -> Some uname
+        | _ -> None
+        
+    let (|Nickname|_|) =
+        function
+        | User(nick, _, _) -> Some nick
+        | _ -> None
+
+    let (|Hostmask|_|) =
+        function
+        | User(_, _, Some hostmask) -> Some hostmask
+        | _ -> None
+
 type IrcMessage = 
-    | IrcMessage of prefix: IrcRecipient * cmd: string * args: string list
+    | IrcMessage of prefix: IrcPrefix * cmd: string * args: string list
 
     override this.ToString() = 
         let concatMessageArgs args = 
@@ -50,7 +68,7 @@ type IrcMessage =
         | IrcMessage(_, cmd, args) -> 
             sprintf "%s%s %s" prefix cmd (concatMessageArgs args)
 
-    member this.Prefix : IrcRecipient = 
+    member this.Prefix : IrcPrefix = 
         match this with
         | IrcMessage(prefix, _, _) -> prefix
 

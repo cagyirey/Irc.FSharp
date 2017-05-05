@@ -46,16 +46,16 @@ module Program =
            client.WriteMessage (IrcMessage.user user "0" user)
         handleMotd () |> Async.RunSynchronously
 
+		// Select and transform (into a response) a subset of PRIVMSG commands and run a command (function) on the output
         client.MessageReceived
-        |> Event.choose(fun msg ->
-            match msg with
-            | PRIVMSG(User sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
-            | PRIVMSG(User sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "%s: Hello!" sender)
+        |> Event.choose(function
+			| PRIVMSG(Nickname sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
+            | PRIVMSG(Nickname sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "%s: Hello!" sender)
             | _ -> None)
         |> Event.add(client.WriteMessage)
 
-	Application.Run()
-	0
+    Application.Run()
+    0
 ```
 
 ### Project Status

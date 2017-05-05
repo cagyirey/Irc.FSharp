@@ -4,6 +4,7 @@
 open Fake
 open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
+open Fake.Testing
 
 open System
 open System.IO
@@ -15,6 +16,8 @@ type Project =
 
 let solutionName = "Irc.FSharp"
 
+let tags = "irc, ircv3"
+
 let mainProject = 
     { Name = solutionName
       Summary = "An IRC client library for F#."
@@ -23,9 +26,13 @@ let mainProject =
 let releaseNotes = ReleaseNotesHelper.parseReleaseNotes (File.ReadLines "RELEASE_NOTES.md")
 
 let solutionFile = solutionName + ".sln"
+
+// publishable projects - for generated lib info
 let projects = [ mainProject ]
 
 let buildDir = "./bin"
+
+let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
 
 let isAppveyorBuild = (environVar >> isNull >> not) "APPVEYOR" 
 let appveyorBuildVersion = sprintf "%s-a%s" releaseNotes.AssemblyVersion (DateTime.UtcNow.ToString "yyMMddHHmm")
@@ -61,6 +68,15 @@ Target "Build" (fun () ->
     |> ignore
 )
 
+Target "RunTests" (fun _ ->
+    !! testAssemblies
+    |> NUnit3 (fun p ->
+        { p with
+            ShadowCopy = false
+            WorkingDir = "tests/Irc.FSharp.Tests"
+            TimeOut = TimeSpan.FromMinutes 10. })
+)
+
 Target "All" DoNothing
 
 "Clean"
@@ -68,6 +84,7 @@ Target "All" DoNothing
     ==> "AssemblyInfo"
     ==> "CopyLicense"
     ==> "Build"
+    ==> "RunTests"
     ==> "All"
 
 let target = getBuildParamOrDefault "target" "All"

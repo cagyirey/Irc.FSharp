@@ -3,8 +3,15 @@ group Build
 
     nuget FAKE
 
+group Tests
+	source https://www.nuget.org/api/v2/
+	framework: auto-detect
+
+	nuget FsUnit
+
 group Main
     source https://www.nuget.org/api/v2/
+	framework: auto-detect
 
     nuget FParsec >= 1.0.1
 	nuget FSharp.Core >= 4.1

@@ -1,54 +1,42 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Name>Irc.FSharp</Name>
-    <AssemblyName>Irc.FSharp</AssemblyName>
-    <RootNamespace>Irc.FSharp</RootNamespace>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>694ab3b0-8929-4f78-ab72-55f29eb48a36</ProjectGuid>
+    <ProjectGuid>cc3e8565-d4ad-40dd-9bff-24e0ca26fe1c</ProjectGuid>
     <OutputType>Library</OutputType>
+    <RootNamespace>Irc.FSharp.Tests</RootNamespace>
+    <AssemblyName>Irc.FSharp.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Name>Irc.FSharp.Tests</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>Full</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <OtherFlags>
-    </OtherFlags>
+    <DocumentationFile>..\..\bin\$(Configuration)\$(AssemblyName).XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>PdbOnly</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\bin\Release\</OutputPath>
+    <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
+    <DocumentationFile>..\..\bin\$(Configuration)\$(AssemblyName).XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="IrcMessage.fs" />
-    <Compile Include="Parser.fs" />
-    <Compile Include="IrcMessageModule.fs" />
-    <Compile Include="rfc2818.fs" />
-    <Compile Include="ResponseCode.fs" />
-    <Compile Include="Net.fs" />
-    <None Include="paket.references" />
-  </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
       <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
@@ -62,16 +50,36 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="parserTests.fs" />
+    <None Include="paket.references" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Irc.FSharp\Irc.FSharp.fsproj">
+      <Name>Irc.FSharp</Name>
+      <Project>{694ab3b0-8929-4f78-ab72-55f29eb48a36}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
-        <Reference Include="FParsec">
-          <HintPath>..\..\packages\FParsec\lib\net40-client\FParsec.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-        <Reference Include="FParsecCS">
-          <HintPath>..\..\packages\FParsec\lib\net40-client\FParsecCS.dll</HintPath>
+        <Reference Include="FSharp.Core">
+          <HintPath>..\..\packages\tests\FSharp.Core\lib\net45\FSharp.Core.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
@@ -81,8 +89,19 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
-        <Reference Include="FSharp.Core">
-          <HintPath>..\..\packages\FSharp.Core\lib\net45\FSharp.Core.dll</HintPath>
+        <Reference Include="FsUnit.NUnit">
+          <HintPath>..\..\packages\tests\FsUnit\lib\net45\FsUnit.NUnit.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="nunit.framework">
+          <HintPath>..\..\packages\tests\NUnit\lib\net45\nunit.framework.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
@@ -93,7 +112,7 @@
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
       <ItemGroup>
         <Reference Include="System.ValueTuple">
-          <HintPath>..\..\packages\System.ValueTuple\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+          <HintPath>..\..\packages\tests\System.ValueTuple\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

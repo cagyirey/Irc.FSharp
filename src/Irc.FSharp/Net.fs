@@ -11,21 +11,23 @@ open System.Security.Cryptography.X509Certificates
 [<AutoOpen>]
 module private Utilities = 
 
-    let inline objDisposed< ^T> = raise (ObjectDisposedException typeof< ^T>.FullName)
-
     let inline dispose(garbage: seq<IDisposable>) = garbage |> Seq.iter(fun disposable -> disposable.Dispose())
+
+    let inline objDisposed< ^T> = raise (ObjectDisposedException typeof< ^T>.FullName)
 
     let inline objDisposedIf< ^T> predicate = if predicate then objDisposed< ^T>
 
-    let noSslErrors = new RemoteCertificateValidationCallback(fun _ _ _ errors -> errors = SslPolicyErrors.None)
+    let inline validateCertCallback cb = new RemoteCertificateValidationCallback(cb)
 
-    let validateCertCallback cb = new RemoteCertificateValidationCallback(cb)
+    let noSslErrors = validateCertCallback (fun _ _ _ errors -> errors = SslPolicyErrors.None)
+
+    let noValidation = validateCertCallback (fun _ _ _ _ -> true)
         
 type IrcClient private (server: string, port: int, client: TcpClient, dataStream: Stream) as this = 
     let mutable disposed = false
 
     let mutable lastActionTime = DateTime.Now
-    let mutable lastPingTime = DateTime.Now
+    let mutable lastPingTime = DateTime.MinValue
     
     let reader = new StreamReader(dataStream) |> TextReader.Synchronized
     let writer = new StreamWriter(dataStream, AutoFlush = true) |> TextWriter.Synchronized
@@ -39,7 +41,7 @@ type IrcClient private (server: string, port: int, client: TcpClient, dataStream
         match message with
         | PING(_, value, _) -> 
             IrcMessage.pong value |> this.WriteMessage
-            this.LastPingTime <- now
+            lastPingTime <- now
         | _ -> ()
         
     let readMessage () = 
