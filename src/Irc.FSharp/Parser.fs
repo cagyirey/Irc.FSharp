@@ -40,7 +40,7 @@ module internal Parser =
     let internal tryUnboxParserResult result = 
         match result with
         | ParserResult.Success(res, _, _) -> Result.Ok res
-        | ParserResult.Failure(_, err, _) -> Result.Error err
+        | ParserResult.Failure(_, err, _) -> Result.Error (err.Messages.ToString() |> exn)
 
     let internal unboxParserResult result =
         match result with
