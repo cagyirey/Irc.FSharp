@@ -1,3 +1,7 @@
+## 0.1.1 - May 6 2016
+* Fixes to unit testing
+* Fixes to pattern matching
+
 ## 0.1.0 - May 5 2017
 * Clean up Paket dependencies
 * Change `IrcRecipient` to `IrcPrefix`

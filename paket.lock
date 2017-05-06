@@ -2,9 +2,9 @@ FRAMEWORK: NET46
 NUGET
   remote: https://www.nuget.org/api/v2
     FParsec (1.0.2)
-    FSharp.Core (4.1.17)
+    FSharp.Core (4.1.17) - redirects: on
       System.ValueTuple (>= 4.3)
-    System.ValueTuple (4.3)
+    System.ValueTuple (4.3) - redirects: on
 
 GROUP Build
 NUGET
@@ -21,4 +21,20 @@ NUGET
       FSharp.Core (>= 3.1.2.5)
       NUnit (>= 3.6)
     NUnit (3.6.1)
+    NUnit.Console (3.6.1)
+      NUnit.ConsoleRunner (>= 3.6.1)
+      NUnit.Extension.NUnitProjectLoader (>= 3.5)
+      NUnit.Extension.NUnitV2Driver (>= 3.6)
+      NUnit.Extension.NUnitV2ResultWriter (>= 3.5)
+      NUnit.Extension.TeamCityEventListener (>= 1.0.2)
+      NUnit.Extension.VSProjectLoader (>= 3.5)
+    NUnit.ConsoleRunner (3.6.1)
+    NUnit.Extension.NUnitProjectLoader (3.5)
+    NUnit.Extension.NUnitV2Driver (3.6)
+    NUnit.Extension.NUnitV2ResultWriter (3.5)
+    NUnit.Extension.TeamCityEventListener (1.0.2)
+    NUnit.Extension.VSProjectLoader (3.5)
     System.ValueTuple (4.3)
+GITHUB
+  remote: fsprojects/FsUnit
+    src/FsUnit.NUnit/FsUnit.fs (d2700b69771379e7a28afa0b4e43da57f2da6e9b)

@@ -8,10 +8,12 @@ group Tests
 	framework: auto-detect
 
 	nuget FsUnit
+	nuget NUnit.Console
+	github fsprojects/FsUnit src/FsUnit.NUnit/FsUnit.fs
 
 group Main
     source https://www.nuget.org/api/v2/
 	framework: auto-detect
 
     nuget FParsec >= 1.0.1
-	nuget FSharp.Core >= 4.1
+	nuget FSharp.Core >= 4.1 redirects: on

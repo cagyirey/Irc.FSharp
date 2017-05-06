@@ -9,12 +9,16 @@ open Fake.Testing
 open System
 open System.IO
 
+
+
 type Project = 
     { Name: string
       Summary: string
       Guid: string }
 
 let solutionName = "Irc.FSharp"
+
+let configuration = "Release"
 
 let tags = "irc, ircv3"
 
@@ -32,13 +36,13 @@ let projects = [ mainProject ]
 
 let buildDir = "./bin"
 
-let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
+let testAssemblies = "tests/bin/**/*Tests*.dll"
 
 let isAppveyorBuild = (environVar >> isNull >> not) "APPVEYOR" 
 let appveyorBuildVersion = sprintf "%s-a%s" releaseNotes.AssemblyVersion (DateTime.UtcNow.ToString "yyMMddHHmm")
 
 Target "Clean" (fun () ->
-    CleanDirs [buildDir]
+    CleanDirs [buildDir; "./tests/bin"]
 )
 
 Target "AppveyorBuildVersion" (fun () ->
@@ -59,7 +63,7 @@ Target "AssemblyInfo" (fun () ->
 
 Target "CopyLicense" (fun () ->
     [ "LICENSE.md" ]
-    |> CopyTo (buildDir @@ "Release")
+    |> CopyTo (buildDir @@ configuration)
 )
 
 Target "Build" (fun () ->
@@ -71,9 +75,10 @@ Target "Build" (fun () ->
 Target "RunTests" (fun _ ->
     !! testAssemblies
     |> NUnit3 (fun p ->
+        let baseDir = "tests/Irc.FSharp.Tests/../bin" @@ configuration
         { p with
             ShadowCopy = false
-            WorkingDir = "tests/Irc.FSharp.Tests"
+            WorkingDir = baseDir
             TimeOut = TimeSpan.FromMinutes 10. })
 )
 

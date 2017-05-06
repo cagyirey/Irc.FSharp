@@ -16,21 +16,21 @@ module IrcMessage =
         | _, _ -> None
 
     type IrcPrefix with
-        static member ParseMany(value) =
-            (Parser.parseRecipients >> Parser.unboxParserResult) value
+        static member ParseMany=
+            parsePrefixes >> unboxParserResult
 
-        static member TryParseMany(value) =
-            (Parser.parseRecipients >> Parser.tryUnboxParserResult) value
+        static member TryParseMany =
+            parsePrefixes >> tryUnboxParserResult
 
-        static member Parse(value) =
-            (Parser.parseRecipient >> Parser.unboxParserResult) value
+        static member Parse =
+            parsePrefix >> unboxParserResult
 
-        static member TryParse(value) =
-            (Parser.parseRecipient >> Parser.tryUnboxParserResult) value
+        static member TryParse =
+            parsePrefix >> tryUnboxParserResult
 
     type IrcMessage with
-        static member Parse(value) =
-            (Parser.parseIrcMessage >> Parser.unboxParserResult) value
+        static member Parse =
+            parseIrcMessage >> unboxParserResult
 
-        static member TryParse(value) =
-            (Parser.parseIrcMessage >> Parser.tryUnboxParserResult) value
+        static member TryParse =
+            parseIrcMessage >> tryUnboxParserResult

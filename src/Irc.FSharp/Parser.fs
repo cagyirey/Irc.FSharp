@@ -4,6 +4,7 @@ open FParsec.CharParsers
 open FParsec.Primitives
 
 module internal Parser =
+    open FParsec
 
     [<AutoOpen>]
     module internal Internal = 
@@ -40,7 +41,7 @@ module internal Parser =
     let internal tryUnboxParserResult result = 
         match result with
         | ParserResult.Success(res, _, _) -> Result.Ok res
-        | ParserResult.Failure(_, err, _) -> Result.Error (err.Messages.ToString() |> exn)
+        | ParserResult.Failure(_, err : ParserError, _) -> Result.Error (err.Messages.ToString() |> exn)
 
     let internal unboxParserResult result =
         match result with
@@ -50,8 +51,8 @@ module internal Parser =
     let parseIrcMessage str =
         run Internal.message str
 
-    let parseRecipient str =
+    let parsePrefix str =
         run Internal.recipient str
 
-    let parseRecipients str =
+    let parsePrefixes str =
         run Internal.recipients str

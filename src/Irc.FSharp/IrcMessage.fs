@@ -25,14 +25,14 @@ type IrcPrefix =
 [<AutoOpen>]
 module IrcPrefix =
 
-    let (|Username|_|) =
-        function
-        | User(_, Some uname, _) -> Some uname
-        | _ -> None
-        
     let (|Nickname|_|) =
         function
         | User(nick, _, _) -> Some nick
+        | _ -> None
+
+    let (|Username|_|) =
+        function
+        | User(_, Some uname, _) -> Some uname
         | _ -> None
 
     let (|Hostmask|_|) =

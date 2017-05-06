@@ -21,34 +21,34 @@ module Tests =
         [<Test>]
         let ``Can match a nickname pattern`` () =
             ``|Nickname|_|`` userPrefix
-            |> should equal "nickname"
-            
+            |> should equal (Some "nickname")
+           
         [<Test>]
         let ``Can match a username pattern`` () =
-            ``|Nickname|_|`` userPrefix
-            |> should equal "username"
+            ``|Username|_|`` userPrefix
+            |> should equal (Some "username")
 
         [<Test>]
         let ``Can match a hostmask pattern`` () =
-            ``|Nickname|_|`` userPrefix
-            |> should equal "hostmask"
+            ``|Hostmask|_|`` userPrefix
+            |> should equal (Some "hostmask")
 
     module ``IRC message parsing tests`` =
 
         [<Test>]
-        let ``Can parse a PRIVMSG`` () =
+        let ``Can construct a PRIVMSG with the IrcMessage union type`` () =
             let message = 
                 IrcMessage(
-                    User("nickname", Some "username", Some "hostmask"),
+                    User("nickname", Some "username", Some "host.mask"),
                     "PRIVMSG",
-                    ["channel1"; "hello"])
+                    ["#channel1"; "hello"])
 
-            message |> should equal rawPrivmsg
+            message |> should equal (IrcMessage.Parse rawPrivmsg)
 
         [<Test>]
-        let ``Can construct a PRIVMSG`` () =
+        let ``Can construct a PRIVMSG with the privmsg function`` () =
             let message = 
-                IrcMessage.privmsg ["channel1"] "hello"
-                |> IrcMessage.withPrefix (User("nickname", Some "username", Some "hostmask"))
+                IrcMessage.privmsg ["#channel1"] "hello"
+                |> IrcMessage.withPrefix (User("nickname", Some "username", Some "host.mask"))
 
-            message |> should equal rawPrivmsg
+            message |> should equal (IrcMessage.Parse rawPrivmsg)

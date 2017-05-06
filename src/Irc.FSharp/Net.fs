@@ -51,9 +51,9 @@ type IrcClient private (server: string, port: int, client: TcpClient, dataStream
             | Ok message ->
                 internalOnMessage message
                 return message
-            | Result.Error parseErr -> 
+            | Result.Error e -> 
                 // TODO: handle non-fatal parse errors
-                return raise (Exception (parseErr.Messages.ToString()))
+                return raise e
         }     
     
     let readerAgent = MailboxProcessor<IrcMessage>.Start(fun mbox ->
