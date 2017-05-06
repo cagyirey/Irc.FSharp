@@ -1,7 +1,5 @@
 ﻿namespace Irc.FSharp
 
-open Irc.FSharp
-
 open NUnit.Framework
 open FsUnit
 

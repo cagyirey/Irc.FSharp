@@ -40,7 +40,6 @@ UpgradeLog*.htm
 paket-files
 !.paket/paket.bootstrapper.exe
 
-
 # F# Core signature data
 /src/**/any/
 
@@ -55,6 +54,7 @@ docs/output/
 temp/
 
 # Test results produced by build
+TestResult*.xml
 release.cmd
 nuget/
 

@@ -9,8 +9,6 @@ open Fake.Testing
 open System
 open System.IO
 
-
-
 type Project = 
     { Name: string
       Summary: string
