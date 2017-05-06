@@ -75,7 +75,7 @@ Target "Build" (fun () ->
 Target "RunTests" (fun _ ->
     !! testAssemblies
     |> NUnit3 (fun p ->
-        let baseDir = "tests/Irc.FSharp.Tests/../bin" @@ configuration
+        let baseDir = "./tests/bin" @@ configuration
         { p with
             ShadowCopy = false
             WorkingDir = baseDir
