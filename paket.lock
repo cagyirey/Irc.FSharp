@@ -4,7 +4,7 @@ NUGET
     FParsec (1.0.2)
     FSharp.Core (4.1.17) - redirects: on
       System.ValueTuple (>= 4.3)
-    System.ValueTuple (4.3) - redirects: on
+    System.ValueTuple (4.3.1) - redirects: on
 
 GROUP Build
 NUGET
@@ -34,7 +34,7 @@ NUGET
     NUnit.Extension.NUnitV2ResultWriter (3.5)
     NUnit.Extension.TeamCityEventListener (1.0.2)
     NUnit.Extension.VSProjectLoader (3.5)
-    System.ValueTuple (4.3)
+    System.ValueTuple (4.3.1)
 GITHUB
   remote: fsprojects/FsUnit
     src/FsUnit.NUnit/FsUnit.fs (d2700b69771379e7a28afa0b4e43da57f2da6e9b)
