@@ -4,7 +4,7 @@ Irc.FSharp is an IRC client library for F#. It provides a simple framework for c
 
 ### Installation
 
-Build Irc.FSharp from the provided .sln file, `build.cmd` or `build.sh`. The solution is configured for .NET 4.6 and F# 4.0 by default.
+Build Irc.FSharp from the provided .sln file, `build.cmd` or `build.sh`. The solution is configured for .NET 4.5 and F# 4.1 by default.
 
 ### Getting Started
 

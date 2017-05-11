@@ -1,4 +1,4 @@
-FRAMEWORK: NET46
+FRAMEWORK: NET45
 NUGET
   remote: https://www.nuget.org/api/v2
     FParsec (1.0.2)
@@ -12,7 +12,7 @@ NUGET
     FAKE (4.61.1)
 
 GROUP Tests
-FRAMEWORK: NET46
+FRAMEWORK: NET45
 NUGET
   remote: https://www.nuget.org/api/v2
     FSharp.Core (4.1.17)
