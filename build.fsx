@@ -34,7 +34,7 @@ let projects = [ mainProject ]
 
 let buildDir = "./bin"
 
-let testAssemblies = "tests/bin/**/*Tests*.dll"
+let testAssemblies = "tests/bin/**/Irc.FSharp.Tests.dll"
 
 let isAppveyorBuild = (environVar >> isNull >> not) "APPVEYOR" 
 let appveyorBuildVersion = sprintf "%s-a%s" releaseNotes.AssemblyVersion (DateTime.UtcNow.ToString "yyMMddHHmm")
