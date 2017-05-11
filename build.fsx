@@ -33,6 +33,7 @@ let solutionFile = solutionName + ".sln"
 let projects = [ mainProject ]
 
 let buildDir = "./bin"
+let testBuildDir = "./tests/bin"
 
 let testAssemblies = "tests/bin/**/*Tests*.dll"
 
@@ -40,7 +41,7 @@ let isAppveyorBuild = (environVar >> isNull >> not) "APPVEYOR"
 let appveyorBuildVersion = sprintf "%s-a%s" releaseNotes.AssemblyVersion (DateTime.UtcNow.ToString "yyMMddHHmm")
 
 Target "Clean" (fun () ->
-    CleanDirs [buildDir; "./tests/bin"]
+    CleanDirs [buildDir]
 )
 
 Target "AppveyorBuildVersion" (fun () ->
@@ -73,10 +74,9 @@ Target "Build" (fun () ->
 Target "RunTests" (fun _ ->
     !! testAssemblies
     |> NUnit3 (fun p ->
-        let baseDir = "./tests/bin" @@ configuration
         { p with
+            WorkingDir = Path.GetFullPath (testBuildDir @@ configuration)
             ShadowCopy = false
-            WorkingDir = baseDir
             TimeOut = TimeSpan.FromMinutes 10. })
 )
 
