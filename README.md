@@ -8,45 +8,33 @@ Build Irc.FSharp from the provided .sln file, `build.cmd` or `build.sh`. The sol
 
 ### Getting Started
 
-Irc.FSharp supports two approaches to message processing: asynchronous and event-based. To work with single inbound messages in a non-blocking way, use `IrcClient.NextMessage()`; the `IrcClient.MessageReceived` event provides a reactive API:
+Irc.FSharp supports two approaches to message processing: asynchronous and event-based. To work with single inbound messages in a non-blocking way, use `IrcClient.NextMessage()`; the `IrcClient.MessageReceived` event provides a reactive API. `IrcConnection` encapsulates an `IrcClient`, the connection state, and some common features of an IRC client:
 
 ```fsharp
 #r "Irc.FSharp.dll"
 
 open Irc.FSharp
-open Irc.FSharp.Net
 open System.Windows.Forms
 
 module Program = 
     [<EntryPoint>]
-    let main argv = 
-        // Configuration placeholder - FSharp.Configuration is a good option
-        let host, port = Settings.Irc.Host, Settings.Irc.Port
+    let main argv =
+		// Settings loaded by FSharp.Configuration - for example, a YAML or XML config file
+        let host = DnsEndPoint(Settings.Irc.Host, Settings.Irc.Port)
         let nick, user = Settings.Irc.Nickname, Settings.Irc.Username
-        let client = new Irclient(host, port, Settings.Irc.UseSSL, fun _ _ _ _ -> true)
         let channels = Settings.Irc.Channels
 
-        client.MessageReceived
-        |> Event.add (fun m -> printfn "%O" m)
+        let con = new IrcConnection(host, nick, user, true, Net.Security.RemoteCertificateValidationCallback(fun _ _ _ _ -> true))
+        let client = con.Client
 
-        let handleMotd () =
-            let rec loop () =
-                async {
-                    let! msg = client.NextMessage ()
-                    match msg with
-                    // Assume it's safe to join channels after RPL_ENDOFMOTD or ERR_NOMOTD.
-                    | NumericResponse (int ResponseCode.RPL_ENDOFMOTD)
-                    | NumericResponse (int ResponseCode.ERR_NOMOTD) ->
-                        client.WriteMessage (IrcMessage.join channels)
-                    | _ -> return! loop ()
-                }
-            loop ()
+        // Prints the client and server configuration information (as reported by the server)
+        async {
+            let! result = con.Ready |> Async.AwaitEvent
+            printfn "%A\r\n\r\n%A" (fst result) (snd result)
+        } |> Async.RunSynchronously
 
-        do client.WriteMessage (IrcMessage.nick nick)
-           client.WriteMessage (IrcMessage.user user "0" user)
-        handleMotd () |> Async.RunSynchronously
-
-        // Select and transform (into a response) a subset of PRIVMSG commands and run a command (function) on the output
+        // Transform an incoming message into a response with `Event.choose`, then send it
+		// Greets the user upon receiving a direct message or a mention in a channel
         client.MessageReceived
         |> Event.choose(function
             | PRIVMSG(Nickname sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
@@ -54,8 +42,8 @@ module Program =
             | _ -> None)
         |> Event.add(client.WriteMessage)
 
-    Application.Run()
-    0
+		Application.Run()
+		0
 ```
 
 ### Project Status

@@ -12,11 +12,11 @@ module IrcMessage =
 
     let (|NumericResponse|_|) (responseCode: int) (message: IrcMessage) =
         match System.Int32.TryParse message.Command with
-        | true, x when x = responseCode -> Some ()
+        | true, x when x = responseCode -> Some message.Arguments
         | _, _ -> None
 
     type IrcPrefix with
-        static member ParseMany=
+        static member ParseMany =
             parsePrefixes >> unboxParserResult
 
         static member TryParseMany =

@@ -38,7 +38,23 @@ let tryGetResponseCode responseName =
     | true, responseCode -> Some responseCode
     | false, _ -> None
 
+// NONSTANDARD RESPONSE CODES
+[<Literal>]
+let RPL_ISUPPORT = "005"
 
+[<Literal>]
+let RPL_YOURID = "042"
+
+[<Literal>]
+let RPL_LOCALUSERS = "265"
+
+[<Literal>]
+let RPL_GLOBALUSERS = "266"
+
+[<Literal>]
+let RPL_HOSTHIDDEN = "396"
+
+// RFC STANDARD RESPONSES
 [<Literal>]
 let RPL_WELCOME = "001"
 
