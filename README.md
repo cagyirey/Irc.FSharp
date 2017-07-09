@@ -19,7 +19,7 @@ open System.Windows.Forms
 module Program = 
     [<EntryPoint>]
     let main argv =
-		// Settings loaded by FSharp.Configuration - for example, a YAML or XML config file
+        // Settings loaded by FSharp.Configuration - for example, a YAML or XML config file
         let host = DnsEndPoint(Settings.Irc.Host, Settings.Irc.Port)
         let nick, user = Settings.Irc.Nickname, Settings.Irc.Username
         let channels = Settings.Irc.Channels
@@ -34,7 +34,7 @@ module Program =
         } |> Async.RunSynchronously
 
         // Transform an incoming message into a response with `Event.choose`, then send it
-		// Greets the user upon receiving a direct message or a mention in a channel
+        // Greets the user upon receiving a direct message or a mention in a channel
         client.MessageReceived
         |> Event.choose(function
             | PRIVMSG(Nickname sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
@@ -42,8 +42,8 @@ module Program =
             | _ -> None)
         |> Event.add(client.WriteMessage)
 
-		Application.Run()
-		0
+        Application.Run()
+        0
 ```
 
 ### Project Status
