@@ -4,7 +4,7 @@ module IRCv3 =
 
     let (|Capability|_|) subcommand (msg: IrcMessage) =
         match msg with
-        | IrcMessage(_, "CAP", _ :: cmd :: rest) ->
+        | IrcMessage(_, EqualsCI "CAP", _ :: cmd :: rest) ->
             if equalsCI subcommand cmd then
                 Some rest
             else None

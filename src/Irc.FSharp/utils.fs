@@ -11,6 +11,8 @@ module internal Utils =
 
     let inline equalsCI (str1: string) (str2: string) = str1.Equals(str2, System.StringComparison.CurrentCultureIgnoreCase)
 
+    let (|EqualsCI|_|) (str1: string) (str2: string) = if equalsCI str1 str2 then Some () else None
+
     let inline dispose(garbage: seq<IDisposable>) = garbage |> Seq.iter(fun disposable -> disposable.Dispose())
 
     let inline objDisposed< ^T> = raise (ObjectDisposedException typeof< ^T>.FullName)
