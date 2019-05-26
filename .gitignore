@@ -5,6 +5,8 @@
 *.userosscache
 *.sln.docstates
 *.vs
+.DS_Store
+.ionide
 
 # Build results
 [Dd]ebug/
@@ -31,6 +33,9 @@ UpgradeLog*.htm
 # ===================================================
 # Exclude F# project specific directories and files
 # ===================================================
+
+*.fsx
+!build.fsx
 
 # FAKE build binaries
 .fake/
