@@ -10,19 +10,18 @@ module IRCv3 =
             else None
         | _ -> None
 
-
     module Capability =
 
-        let internal Cap subcommand args = IrcMessage(Empty, "CAP", subcommand :: args)
+        let internal capability subcommand args = IrcMessage(Empty, "CAP", subcommand :: args)
 
-        let Ls version = Cap "LS" [version]
+        let Ls version = capability "LS" [version]
 
-        let List = Cap "LIST" []
+        let List = capability "LIST" []
 
-        let Req features = Cap "REQ" (Seq.toList features)
+        let Req features = capability "REQ" (Seq.toList features)
 
-        let Ack request = Cap "ACK" (Seq.toList request)
+        let Ack request = capability "ACK" (Seq.toList request)
 
-        let Nak request = Cap "NAK" [request]
+        let Nak request = capability "NAK" [request]
 
-        let End = Cap "END" []
+        let End = capability "END" []

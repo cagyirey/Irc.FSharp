@@ -1,5 +1,6 @@
 language: csharp
 sudo: false
+dotnet: 2.2.300
 
 before_script:
   - chmod +x ./build.sh

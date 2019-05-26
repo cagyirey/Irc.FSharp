@@ -8,6 +8,7 @@ open System.Threading
 open System.Security.Authentication
 open System.Security.Cryptography.X509Certificates
 open System.Net
+open System.Security.Authentication
         
 type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: RemoteCertificateValidationCallback) as this = 
 
@@ -17,7 +18,9 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
     let mutable lastPingTime = DateTime.MinValue
     
     let reader = new StreamReader(dataStream) |> TextReader.Synchronized
-    let writer = new StreamWriter(dataStream, AutoFlush = true) |> TextWriter.Synchronized
+    let writer = 
+        new StreamWriter(dataStream, AutoFlush = true) 
+        |> TextWriter.Synchronized
     
     let msgEvent = Event<IrcMessage>()
 
@@ -36,11 +39,13 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
     let readMessage () = 
         async { 
             let! line = reader.ReadLineAsync() |> Async.AwaitTask
+            
+            // parse result can somehow end up being null if trying to read an ssl stream as plaintext
             match IrcMessage.TryParse line with
             | Ok message ->
                 internalOnMessage message
                 return message
-            | Result.Error e -> 
+            | Result.Error e ->
                 // TODO: handle non-fatal parse errors
                 return raise e
         }     
@@ -54,6 +59,8 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
                     return! loop()
             }
         loop ())
+    // TODO: appropriate error handling.
+    // reader mailbox will fail silently on e.g. SslStream read exception
 
     new (host: string, port: int, ?ssl: bool, ?validateCertCallback: RemoteCertificateValidationCallback) = 
         let client = new TcpClient(host, port)
@@ -69,7 +76,7 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
                 .AuthenticateAsClient(
                     host,
                     new X509CertificateCollection(), 
-                    SslProtocols.Default ||| SslProtocols.Tls12,
+                    SslProtocols.Default, // TODO: review security of this construct
                     true)
 
         new IrcClient(client, dataStream, defaultArg validateCertCallback noSslErrors)
@@ -87,7 +94,8 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
                 string ip.Address, ip.Port
             | :? DnsEndPoint as name ->
                 name.Host, name.Port
-        new IrcClient(host, port, defaultArg ssl false, defaultArg validateCertCallback noSslErrors)
+        new IrcClient(host, port, defaultArg ssl false, defaultArg
+            validateCertCallback noSslErrors)
     
     static member ConnectAsync(host: string, port: int, ?ssl: bool, ?validateCertCallback: RemoteCertificateValidationCallback) = 
         async { 
@@ -106,7 +114,7 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
                 do! (dataStream :?> SslStream).AuthenticateAsClientAsync(
                         host,
                         new X509CertificateCollection(),
-                        SslProtocols.Default ||| SslProtocols.Tls12,
+                        SslProtocols.Default,
                         true)
                     |> Async.AwaitIAsyncResult
                     |> Async.Ignore
@@ -162,9 +170,10 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
     interface IDisposable with
         override this.Dispose() = 
             do disposed <- true
-               client.Close()
-               dispose [ reader; writer; readerAgent ]
+            client.Close()
+            dispose [ reader; writer; readerAgent ]
 
-               match dataStream with
-               | :? SslStream as sslStream -> (sslStream :> IDisposable).Dispose()
-               | _ -> ()
+            match dataStream with
+            | :? SslStream as sslStream -> 
+                (sslStream :> IDisposable).Dispose()
+            | _ -> ()

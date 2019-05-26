@@ -1,3 +1,9 @@
+### 0.3.0 - May 25 2019
+* Valid TLS protocols are now determined by the OS.
+* Improved naming conventions for `IrcConnection` members.
+* Target framework changed to .NET Core 2.2.
+* Upgraded to FAKE 5 and improved build automation scripts.
+
 ### 0.2.0 - July 9 2017
 * `NumericResponse` takes a numeric string now, and decomposes a response into its parameters
 * Added a `ReadTimeout` property to `IrcClient`

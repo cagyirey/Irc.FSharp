@@ -42,7 +42,6 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         MessageOfTheDay = None
         UserModes = []
         ChannelModes = []
-        // "Parametric channel modes"
         ServerModes = []
         Supports = Map.empty
         Capabilities = Map.empty
@@ -56,24 +55,26 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         Capabilities = Map.empty
     }
 
-    let rec loop (features: string list) (acc: Map<string, string option>) =
+    let rec addCapability (features: string list) 
+        (source: Map<string, string option>) =
             match features with
+            | [_] -> source // drop the last argument (a text 
             | feature :: xs -> 
                 let k, v =
                     match feature.IndexOf '=' with
                     | -1 -> feature, None
                     | i -> feature.[0..i - 1], Some feature.[i + 1..]
-                loop xs (acc.Add (k, v))
-            | [] -> acc
+                addCapability xs (source.Add (k, v))
+            | [] -> source
 
     let addSupportedFeatures features = 
-        loop features (!serverState).Supports
+        addCapability features (!serverState).Supports
 
     let addClientCapabilities capabilities =
-        loop capabilities (!clientState).Capabilities
+        addCapability capabilities (!clientState).Capabilities
 
     let addServerCapabilities capabilities =
-        loop capabilities (!serverState).Capabilities
+        addCapability capabilities (!serverState).Capabilities
 
     let mutable client = 
         new IrcClient(host,
@@ -85,14 +86,13 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         clientState :=
             { !clientState with
                 Capabilities = addClientCapabilities capabilities }
-
     | IRCv3.Capability "LS" capabilities ->
         serverState :=
             { !serverState with
                 Capabilities = addServerCapabilities capabilities }
         Capability.End |> client.WriteMessage
 
-    let clientNegotiate state = function
+    let handleClientStateChange state = function
     | NumericResponse (int ResponseCode.RPL_YOURID) [_; id; _] -> 
         state := 
             { !state with
@@ -104,7 +104,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         readyEvt.Trigger (!state, !serverState)
     | _ -> ()
 
-    let serverNegotiate state = function
+    let handleServerStateChange state = function
     | NumericResponse (int ResponseCode.RPL_ISUPPORT) (_ :: features) -> 
         state :=
             { !state with
@@ -117,19 +117,24 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
                 UserModes = Seq.toList uModes
                 ChannelModes = Seq.toList chModes
                 ServerModes = Seq.toList serverModes }
-    | NumericResponse (int ResponseCode.RPL_MOTD) [_; line] -> motdBuilder.AppendLine line |> ignore
+    | NumericResponse (int ResponseCode.RPL_MOTD) [_; line] -> 
+        motdBuilder.AppendLine line |> ignore
     | NumericResponse(int ResponseCode.RPL_ENDOFMOTD) _ ->
+        let motd = motdBuilder.ToString()
+        do motdBuilder.Clear() |> ignore
         state :=
             { !state with
-                MessageOfTheDay = Some (motdBuilder.ToString()) }
+                MessageOfTheDay = Some motd }
     | _ -> ()
 
     // These observers loop through communications looking for configuration values
-    let serverNegotiator = 
-        Observable.subscribe(serverNegotiate serverState) client.MessageReceived
+    let handleServerStateChanged = 
+        Observable.subscribe(handleServerStateChange serverState)
+            client.MessageReceived
     
-    let clientNegotiator =
-        Observable.subscribe(clientNegotiate clientState) client.MessageReceived
+    let handleClientStateChanged =
+        Observable.subscribe(handleClientStateChange clientState)
+            client.MessageReceived
 
     // TODO: Attach handlers for IRCv3 and other persistent features here. `Event.filter` / `Event.choose` for performance.
     do
@@ -137,7 +142,14 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         |> Event.filter(fun msg -> equalsCI "CAP" msg.Command)
         |> Event.add ircv3Handler
 
-    do this.ConnectAsync() |> Async.Start
+        this.ConnectAsync() |> Async.Start
+
+    new(host: string, port: int, nickname: string, ?username: string, ?useSsl: bool, ?validateCertCallback: Security.RemoteCertificateValidationCallback) = 
+        IrcConnection(DnsEndPoint(host, port),
+            nickname,
+            defaultArg username nickname,
+            defaultArg useSsl false,
+            defaultArg validateCertCallback noSslErrors)
 
     member this.Client = client
 
@@ -146,8 +158,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
     member this.ServerState = !serverState
     // TODO: use a better ready indicator (currently: RPL_HOSTHIDDEN)
     [<CLIEvent>]
-    member this.Ready = 
-        readyEvt.Publish
+    member this.OnReady = readyEvt.Publish
 
     member this.Reconnect () =
         if not client.Connected then
@@ -156,17 +167,18 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
 
     member internal this.ConnectAsync () =
         async { 
-            
             client.WriteMessage (Capability.Ls IRCv3Version)
 
             client.WriteMessage (IrcMessage.nick (!clientState).Nickname)
             client.WriteMessage (IrcMessage.user (!clientState).Username "0" (!clientState).Username)
 
             do! 
-                Async.AwaitEvent (this.Ready)
+                Async.AwaitEvent (this.OnReady)
                 |> Async.Ignore
 
-            // After the connection is ready, we need to disconnect the event handlers for perf reasons
+            // After the connection is ready, we need to disconnect unneeded handlers
             // We will also want to connect a new set of events to watch events such as JOIN, NAMES, PART, etc
-            serverNegotiator.Dispose(); clientNegotiator.Dispose();
+
+            //handleServerStateChanged.Dispose()
+            //handleClientStateChanged.Dispose()
         }

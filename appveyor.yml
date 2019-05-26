@@ -1,0 +1,9 @@
+version: 1.0.{build}
+
+image: Visual Studio 2017
+
+clone_folder: c:\build\irc.fsharp
+
+build_script:
+
+- cmd: ./build.cmd
