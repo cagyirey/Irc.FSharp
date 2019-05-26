@@ -1,13 +1,28 @@
-#I @"packages/build/FAKE/tools"
-#r @"FakeLib.dll"
+// -----------------------------------------------------------------------------
+// FAKE build script
+// --------------------------------------------------------------------------------
+#r "paket: 
+nuget Fake.Core.Target prerelease
+nuget Fake.Core.ReleaseNotes
+nuget Fake.DotNet.Cli
+nuget Fake.DotNet.AssemblyInfoFile
+nuget Fake.IO.FileSystem  //"
 
-open Fake
-open Fake.AssemblyInfoFile
-open Fake.ReleaseNotesHelper
-open Fake.Testing
+//#load "./.fake/build_new.fsx/intellisense.fsx"
 
 open System
 open System.IO
+
+open Fake.Core
+open Fake.Core.TargetOperators
+open Fake.DotNet
+open Fake.IO
+open Fake.IO.FileSystemOperators
+open Fake.IO.Globbing.Operators
+
+// -----------------------------------------------------------------------------
+// Build Properties
+// --------------------------------------------------------------------------------
 
 type Project = 
     { Name: string
@@ -25,71 +40,86 @@ let mainProject =
       Summary = "An IRC client library for F#."
       Guid = "694ab3b0-8929-4f78-ab72-55f29eb48a36" }
 
-let releaseNotes = ReleaseNotesHelper.parseReleaseNotes (File.ReadLines "RELEASE_NOTES.md")
-
-let solutionFile = solutionName + ".sln"
+let releaseNotes = ReleaseNotes.parse (File.ReadLines "RELEASE_NOTES.md")
 
 // publishable projects - for generated lib info
 let projects = [ mainProject ]
 
-let buildDir = "./bin"
-let testBuildDir = "./tests/bin"
+let testAssemblies = "tests/**/*.*proj"
 
-let testAssemblies = "tests/bin/**/*Tests*.dll"
+let outputPath = "./bin"
 
-let isAppveyorBuild = (environVar >> isNull >> not) "APPVEYOR" 
+let isAppveyorBuild = Environment.hasEnvironVar "APPVEYOR" 
 let appveyorBuildVersion = sprintf "%s-a%s" releaseNotes.AssemblyVersion (DateTime.UtcNow.ToString "yyMMddHHmm")
 
-Target "Clean" (fun () ->
-    CleanDirs [buildDir]
-)
+let appReferences = !! "*.sln"
 
-Target "AppveyorBuildVersion" (fun () ->
+// -----------------------------------------------------------------------------
+// Custom Targets
+// -----------------------------------------------------------------------------
+
+Target.create "AppveyorBuildVersion" (fun _ ->
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" appveyorBuildVersion) |> ignore
 )
 
-Target "AssemblyInfo" (fun () ->
+Target.create "AssemblyInfo" (fun _ ->
     List.iter(fun project -> 
         let filename = "./src" @@ project.Name @@ "AssemblyInfo.fs"
-        CreateFSharpAssemblyInfo filename
-            [ Attribute.Title project.Name
-              Attribute.Product solutionName
-              Attribute.Description project.Summary
-              Attribute.Version releaseNotes.AssemblyVersion
-              Attribute.FileVersion releaseNotes.AssemblyVersion
-              Attribute.Guid project.Guid ]) projects
+        AssemblyInfoFile.createFSharp filename
+            [ AssemblyInfo.Title project.Name
+              AssemblyInfo.Product solutionName
+              AssemblyInfo.Description project.Summary
+              AssemblyInfo.Version releaseNotes.AssemblyVersion
+              AssemblyInfo.FileVersion releaseNotes.AssemblyVersion
+              AssemblyInfo.Guid project.Guid ]) projects
 )
 
-Target "CopyLicense" (fun () ->
-    [ "LICENSE.md" ]
-    |> CopyTo (buildDir @@ configuration)
-)
-
-Target "Build" (fun () ->
-    !! solutionFile
-    |> MSBuildRelease "" "Rebuild"
-    |> ignore
-)
-
-Target "RunTests" (fun _ ->
+Target.create "RunTests" (fun _ -> 
     !! testAssemblies
-    |> NUnit3 (fun p ->
-        { p with
-            WorkingDir = Path.GetFullPath (testBuildDir @@ configuration)
-            ShadowCopy = false
-            TimeOut = TimeSpan.FromMinutes 10. })
+    |> Seq.iter (DotNet.test id)
 )
 
-Target "All" DoNothing
+// -----------------------------------------------------------------------------
+// Targets
+// -----------------------------------------------------------------------------
+
+Target.create "Clean" (fun _ ->
+    !! "src/**/bin"
+    ++ "src/**/obj"
+    ++ "test/**/bin"
+    ++ "test/**/obj"
+    |> Shell.cleanDirs 
+)
+
+Target.create "Restore" (fun _ ->
+    appReferences
+    |> Seq.iter (fun p -> DotNet.restore id p)
+)
+
+Target.create "CopyLicense" (fun _ -> ()
+    // todo: implement this
+)
+
+Target.create "Build" (fun _ ->
+    appReferences
+    |> Seq.iter (DotNet.build (fun cfg -> { cfg with 
+        OutputPath = Some outputPath}))
+)
+
+Target.create "All" ignore
+
+// -----------------------------------------------------------------------------
+// Build order
+// -------------------------------------------------------------------------------=
 
 "Clean"
     =?> ("AppveyorBuildVersion", isAppveyorBuild)
     ==> "AssemblyInfo"
-    ==> "CopyLicense"
+    // paket restore is run by the build script and possibly netcore as well
+    // preferable to do it as a build task if other triggers can be disabled
+    // ==> "Restore" 
     ==> "Build"
     ==> "RunTests"
     ==> "All"
 
-let target = getBuildParamOrDefault "target" "All"
-
-RunTargetOrDefault target
+Target.runOrDefault "All"

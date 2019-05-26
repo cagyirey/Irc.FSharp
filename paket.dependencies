@@ -1,19 +1,18 @@
-group Build
-    source https://www.nuget.org/api/v2/
-
-    nuget FAKE
-
-group Tests
-	source https://www.nuget.org/api/v2/
-	framework: auto-detect
-
-	nuget FsUnit
-	nuget NUnit.Console
-	github fsprojects/FsUnit src/FsUnit.NUnit/FsUnit.fs
+version 5.198.0
 
 group Main
-    source https://www.nuget.org/api/v2/
-	framework: auto-detect
+	framework: netcoreapp2.2
+    source https://api.nuget.org/v3/index.json
 
-    nuget FParsec >= 1.0.1
-	nuget FSharp.Core >= 4.1 redirects: on
+	nuget FSharp.Core
+    nuget FParsec
+
+group Tests
+	framework: netcoreapp2.2
+    source https://api.nuget.org/v3/index.json
+
+	nuget FsUnit
+    nuget Microsoft.NET.Test.Sdk
+    nuget NUnit3TestAdapter
+
+	github fsprojects/FsUnit src/FsUnit.NUnit/FsUnit.fs
