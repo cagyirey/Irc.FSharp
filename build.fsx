@@ -1,6 +1,7 @@
 // -----------------------------------------------------------------------------
 // FAKE build script
 // --------------------------------------------------------------------------------
+
 #r "paket: 
 nuget Fake.Core.Target prerelease
 nuget Fake.Core.ReleaseNotes
@@ -8,7 +9,7 @@ nuget Fake.DotNet.Cli
 nuget Fake.DotNet.AssemblyInfoFile
 nuget Fake.IO.FileSystem  //"
 
-//#load "./.fake/build_new.fsx/intellisense.fsx"
+//#load "./.fake/build.fsx/intellisense.fsx"
 
 open System
 open System.IO
@@ -102,8 +103,9 @@ Target.create "CopyLicense" (fun _ -> ()
 
 Target.create "Build" (fun _ ->
     appReferences
-    |> Seq.iter (DotNet.build (fun cfg -> { cfg with 
-        OutputPath = Some outputPath}))
+    |> Seq.iter (DotNet.build (fun cfg -> { cfg with
+        OutputPath = Some outputPath
+        }))
 )
 
 Target.create "All" ignore
