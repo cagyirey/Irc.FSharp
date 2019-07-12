@@ -21,7 +21,7 @@ type IrcClientState = {
     Nickname: string
     Username: string
     HostMask: string
-    
+
     UniqueId: string option
     Capabilities: Map<string, string option>
 }
@@ -30,13 +30,7 @@ type IrcClientState = {
 /// Provides a high-level representation of an IRC session.
 type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCallback) as this =
 
-    [<Literal>]
-    let IRCv3Version = "302"
-
-    let motdBuilder = StringBuilder()
-    let readyEvt = Event<IrcClientState * IrcServerState> ()
-
-    let serverState = ref {
+    static let defaultServerState = {
         Name = String.Empty
         Version = String.Empty
         MessageOfTheDay = None
@@ -47,7 +41,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         Capabilities = Map.empty
     }
 
-    let clientState = ref {
+    static let defaultClientState username nickname = {
         Nickname = nickname
         Username = defaultArg username nickname
         HostMask = String.Empty
@@ -55,10 +49,19 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         Capabilities = Map.empty
     }
 
+    [<Literal>]
+    static let IRCv3Version = "302"
+
+    let motdBuilder = StringBuilder()
+    let onReadyInternal = Event<unit> ()
+
+    let serverState = ref defaultServerState
+    let clientState = ref (defaultClientState username nickname)
+
     let rec addCapability (features: string list) 
         (source: Map<string, string option>) =
             match features with
-            | [_] -> source // drop the last argument (a text 
+            | [_] -> source // drop the last argument (a text-based descriptor)
             | feature :: xs -> 
                 let k, v =
                     match feature.IndexOf '=' with
@@ -81,16 +84,17 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
             defaultArg useSsl false,
             defaultArg validateCertCallback noSslErrors)
 
-    let ircv3Handler = function
-    | IRCv3.Capability "LIST" capabilities ->
-        clientState :=
-            { !clientState with
-                Capabilities = addClientCapabilities capabilities }
-    | IRCv3.Capability "LS" capabilities ->
-        serverState :=
-            { !serverState with
-                Capabilities = addServerCapabilities capabilities }
-        Capability.End |> client.WriteMessage
+    let handleIrcV3Event = function
+        | IRCv3.Capability "LIST" capabilities ->
+            clientState :=
+                { !clientState with
+                    Capabilities = addClientCapabilities capabilities }
+                    
+        | IRCv3.Capability "LS" capabilities ->
+            serverState :=
+                { !serverState with
+                    Capabilities = addServerCapabilities capabilities }
+            Capability.End |> client.WriteMessage
 
     let handleClientStateChange state = function
     | NumericResponse (int ResponseCode.RPL_YOURID) [_; id; _] -> 
@@ -101,33 +105,35 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         state := 
             { !state with
                 HostMask = mask }
-        readyEvt.Trigger (!state, !serverState)
+        onReadyInternal.Trigger ()
     | _ -> ()
 
     let handleServerStateChange state = function
-    | NumericResponse (int ResponseCode.RPL_ISUPPORT) (_ :: features) -> 
-        state :=
-            { !state with
-                Supports = addSupportedFeatures features }
-    | NumericResponse (int ResponseCode.RPL_MYINFO) [_; serverName; version; uModes; chModes; serverModes] ->
-        state :=
-            { !state with
-                Name = serverName
-                Version = version
-                UserModes = Seq.toList uModes
-                ChannelModes = Seq.toList chModes
-                ServerModes = Seq.toList serverModes }
-    | NumericResponse (int ResponseCode.RPL_MOTD) [_; line] -> 
-        motdBuilder.AppendLine line |> ignore
-    | NumericResponse(int ResponseCode.RPL_ENDOFMOTD) _ ->
-        let motd = motdBuilder.ToString()
-        do motdBuilder.Clear() |> ignore
-        state :=
-            { !state with
-                MessageOfTheDay = Some motd }
-    | _ -> ()
+        | NumericResponse (int ResponseCode.RPL_ISUPPORT) (_ :: features) -> 
+            state :=
+                { !state with
+                    Supports = addSupportedFeatures features }
+                    
+        | NumericResponse (int ResponseCode.RPL_MYINFO) [_; serverName; version; uModes; chModes; serverModes] ->
+            state :=
+                { !state with
+                    Name = serverName
+                    Version = version
+                    UserModes = Seq.toList uModes
+                    ChannelModes = Seq.toList chModes
+                    ServerModes = Seq.toList serverModes }
 
-    // These observers loop through communications looking for configuration values
+        | NumericResponse (int ResponseCode.RPL_MOTD) [_; line] -> 
+            motdBuilder.AppendLine line |> ignore
+
+        | NumericResponse(int ResponseCode.RPL_ENDOFMOTD) _ ->
+            let motd = motdBuilder.ToString()
+            do motdBuilder.Clear() |> ignore
+            state :=
+                { !state with
+                    MessageOfTheDay = Some motd }
+        | _ -> ()
+
     let handleServerStateChanged = 
         Observable.subscribe(handleServerStateChange serverState)
             client.MessageReceived
@@ -140,7 +146,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
     do
         client.MessageReceived
         |> Event.filter(fun msg -> equalsCI "CAP" msg.Command)
-        |> Event.add ircv3Handler
+        |> Event.add handleIrcV3Event
 
         this.ConnectAsync() |> Async.Start
 
@@ -151,19 +157,33 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
             defaultArg useSsl false,
             defaultArg validateCertCallback noSslErrors)
 
-    member this.Client = client
+    // TODO: use a better ready indicator (currently: RPL_HOSTHIDDEN)
+    [<CLIEvent>]
+    member internal this.OnReady = onReadyInternal.Publish
 
     member this.ClientState = !clientState
 
     member this.ServerState = !serverState
-    // TODO: use a better ready indicator (currently: RPL_HOSTHIDDEN)
-    [<CLIEvent>]
-    member this.OnReady = readyEvt.Publish
 
-    member this.Reconnect () =
-        if not client.Connected then
-            client <- new IrcClient(host, defaultArg useSsl false, defaultArg validateCertCallback noSslErrors)
-        else invalidOp "Reconnect was called on an open socket."
+    [<CLIEvent>]
+    member this.MessageReceived : IEvent<IrcMessage> = client.MessageReceived
+
+    member this.SendMessage = client.WriteMessage
+
+    member this.SendMessageAsync = client.WriteMessageAsync
+
+    member this.ReconnectAsync  () =
+        async { 
+            serverState := defaultServerState
+            clientState := (defaultClientState username nickname)
+            let! newClient = client.ReconnectAsync()
+            client <- newClient
+            do! this.ConnectAsync()
+        }
+
+    member this.Reconnect () = 
+        this.ReconnectAsync ()
+        |> Async.RunSynchronously
 
     member internal this.ConnectAsync () =
         async { 

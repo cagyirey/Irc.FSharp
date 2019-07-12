@@ -2,15 +2,13 @@ namespace Irc.FSharp
 
 open System
 open System.IO
+open System.Net
 open System.Net.Security
 open System.Net.Sockets
-open System.Threading
 open System.Security.Authentication
 open System.Security.Cryptography.X509Certificates
-open System.Net
-open System.Security.Authentication
-        
-type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: RemoteCertificateValidationCallback) as this = 
+
+type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: RemoteCertificateValidationCallback, ?msgEvent: Event<IrcMessage>) as this = 
 
     let mutable disposed = false
 
@@ -22,9 +20,9 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
         new StreamWriter(dataStream, AutoFlush = true) 
         |> TextWriter.Synchronized
     
-    let msgEvent = Event<IrcMessage>()
+    let messageEvent = defaultArg msgEvent (Event<IrcMessage>())
 
-    let internalOnMessage message =
+    let handleMessageInternal message =
         let now = DateTime.UtcNow
         lastActionTime <- now
 
@@ -43,7 +41,7 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
             // parse result can somehow end up being null if trying to read an ssl stream as plaintext
             match IrcMessage.TryParse line with
             | Ok message ->
-                internalOnMessage message
+                handleMessageInternal message
                 return message
             | Result.Error e ->
                 // TODO: handle non-fatal parse errors
@@ -55,12 +53,10 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
             async { 
                 if this.Connected then
                     let! msg = readMessage()
-                    msgEvent.Trigger msg
+                    messageEvent.Trigger msg
                     return! loop()
             }
         loop ())
-    // TODO: appropriate error handling.
-    // reader mailbox will fail silently on e.g. SslStream read exception
 
     new (host: string, port: int, ?ssl: bool, ?validateCertCallback: RemoteCertificateValidationCallback) = 
         let client = new TcpClient(host, port)
@@ -75,8 +71,8 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
             (dataStream :?> SslStream)
                 .AuthenticateAsClient(
                     host,
-                    new X509CertificateCollection(), 
-                    SslProtocols.Default, // TODO: review security of this construct
+                    X509CertificateCollection(), 
+                    SslProtocols.None,
                     true)
 
         new IrcClient(client, dataStream, defaultArg validateCertCallback noSslErrors)
@@ -113,14 +109,24 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
             if dataStream :? SslStream then 
                 do! (dataStream :?> SslStream).AuthenticateAsClientAsync(
                         host,
-                        new X509CertificateCollection(),
-                        SslProtocols.Default,
+                        X509CertificateCollection(),
+                        SslProtocols.None,
                         true)
                     |> Async.AwaitIAsyncResult
                     |> Async.Ignore
 
             return new IrcClient(client, dataStream, defaultArg validateCertCallback noSslErrors)
         }
+
+    static member ConnectAsync(endpoint: EndPoint, ?ssl: bool, ?validateCertCallback: RemoteCertificateValidationCallback) =
+        let host, port =
+            match endpoint with
+            | :? IPEndPoint as ip -> string ip.Address, ip.Port
+            | :? DnsEndPoint as dns -> dns.Host, dns.Port
+            
+        IrcClient.ConnectAsync(host, port,
+            defaultArg ssl false,
+            defaultArg validateCertCallback noSslErrors)
 
     member internal this.IsSsl = dataStream :? SslStream
 
@@ -137,18 +143,14 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
     member this.LocalEndPoint = client.Client.LocalEndPoint
 
     member this.ReadTimeout
-        with get () = client.ReceiveTimeout * 1000
-        and set v = client.ReceiveTimeout <- v * 1000
+        with get () = client.ReceiveTimeout
+        and set v = client.ReceiveTimeout <- v
     
     [<CLIEvent>]
-    member this.MessageReceived = msgEvent.Publish
+    member this.MessageReceived = messageEvent.Publish
 
     [<CLIEvent>]
     member this.Error = readerAgent.Error
-        
-    member this.NextMessage () =
-        objDisposedIf<IrcClient> disposed
-        Async.AwaitEvent (this.MessageReceived)
                 
     member this.Connected = 
         objDisposedIf<IrcClient> disposed
@@ -166,6 +168,50 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
                 |> Async.AwaitIAsyncResult
                 |> Async.Ignore
         }
+
+    member internal this.ReconnectAsync() =
+        async { 
+            let host, port = 
+                match client.Client.RemoteEndPoint with
+                | :? DnsEndPoint as ep -> ep.Host, ep.Port
+                | :? IPEndPoint as ep -> string ep.Address, ep.Port
+
+            let remoteCertSubject = 
+                match dataStream with
+                | :? SslStream as sslStream -> 
+                    use cert = new X509Certificate2(sslStream.RemoteCertificate)
+                    Some(cert.GetNameInfo(X509NameType.DnsName, false))
+                | _ -> None
+
+            do (this :> IDisposable).Dispose()
+
+            let newClient = new TcpClient()
+            do! client.ConnectAsync(host, port)
+                |> Async.AwaitIAsyncResult
+                |> Async.Ignore
+
+            let newStream: Stream = 
+                if dataStream :? SslStream then
+                    upcast new SslStream(newClient.GetStream(), true, defaultArg certCallback noSslErrors)
+                else
+                    upcast client.GetStream()
+
+            if newStream :? SslStream then 
+                do! 
+                    (newStream :?> SslStream).AuthenticateAsClientAsync(
+                        (Option.get remoteCertSubject),
+                        X509CertificateCollection(), 
+                        SslProtocols.None, true)
+                    |> Async.AwaitIAsyncResult
+                    |> Async.Ignore                    
+                        
+            return new IrcClient(newClient, newStream, defaultArg certCallback noSslErrors, messageEvent) 
+
+        }
+
+    member this.Reconnect() =
+        this.ReconnectAsync ()
+        |> Async.RunSynchronously
 
     interface IDisposable with
         override this.Dispose() = 

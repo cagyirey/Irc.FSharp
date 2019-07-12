@@ -2,4 +2,6 @@
 
 group Tests
 	FsUnit
+	Microsoft.NET.Test.Sdk
+	NUnit3TestAdapter
 	File: FsUnit.fs

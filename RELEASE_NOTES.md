@@ -1,3 +1,12 @@
+### 0.4.0 - July 12 2019
+* Added an `IrcClient.ConnectAsync` constructor taking an `EndPoint`.
+* `IrcClient.ReadTimeout` is now in milliseconds.
+* Removed asynchronous `IrcClient.NextMessage` method.
+* Added a graceful reconnect feature in `IrcClient.ReconnectAsync`/`Irc.ClientReconnect` and `IrcConnection.ReconnectAsync`/`IrcClient.Reconnect`.
+* `IrcConnection.OnReady` is now correctly marked as `internal`.
+* `MessageReceived`, `SendMessage` and `SendMessageAsync` are now usable from the `IrcConnection` type.
+* Unit tests are correctly run at build time.
+
 ### 0.3.0 - May 25 2019
 * Valid TLS protocols are now determined by the OS.
 * Improved naming conventions for `IrcConnection` members.

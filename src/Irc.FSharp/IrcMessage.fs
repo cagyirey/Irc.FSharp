@@ -45,7 +45,7 @@ type IrcMessage =
 
     override this.ToString() = 
         let concatMessageArgs args = 
-            let sb = new StringBuilder()
+            let sb = StringBuilder()
             let rec loop args = 
                 match args with
                 | [ singleArg ] -> 

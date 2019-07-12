@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <!-- Required elements-->
+        <id>@project@</id>
+        <version>@build.number@</version>
+        <description>@description@</description>
+        <authors>@authors@</authors>
+        <owners>@authors@</owners>
+        <summary>@summary@</summary>
+        <licenseUrl>https://github.com/cagyirey/Irc.FSharp/blob/master/LICENSE.txt</licenseUrl>
+        <projectUrl>https://github.com/cagyirey/Irc.FSharp</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <releaseNotes>@releaseNotes@</releaseNotes>
+        <copyright>@copyright@</copyright>
+        @dependencies@
+        @references@
+    </metadata>
+    @files@
+</package>
