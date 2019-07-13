@@ -95,6 +95,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
                 { !serverState with
                     Capabilities = addServerCapabilities capabilities }
             Capability.End |> client.WriteMessage
+        | _ -> ()        
 
     let handleClientStateChange state = function
     | NumericResponse (int ResponseCode.RPL_YOURID) [_; id; _] -> 
