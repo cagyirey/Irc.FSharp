@@ -165,12 +165,24 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
 
     member this.ServerState = !serverState
 
+    member this.Connected = client.Connected
+
+    member this.IsSsl = client.IsSsl
+
+    member this.LastActionTime = client.LastMessageTime
+
+    member this.LastPingTime = client.LastPingTime
+
+    member this.LocalEndPoint = client.LocalEndPoint
+
+    member this.RemoteEndPoint = client.RemoteEndPoint
+
     [<CLIEvent>]
     member this.MessageReceived : IEvent<IrcMessage> = client.MessageReceived
 
-    member this.SendMessage = client.WriteMessage
+    member this.SendMessage message = client.WriteMessage message
 
-    member this.SendMessageAsync = client.WriteMessageAsync
+    member this.SendMessageAsync message = client.WriteMessageAsync message
 
     member this.ReconnectAsync  () =
         async { 

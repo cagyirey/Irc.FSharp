@@ -68,6 +68,8 @@ let nugetPublishParams (p: NuGet.NuGetParams) =
         WorkingDir = "./"
         OutputPath = "./publish"
         ToolPath = "nuget"
+        PublishUrl = "https://api.nuget.org/v3/index.json"
+        //Publish=true
         Files = 
             [ (@"src/Irc.FSharp/bin/Release/**/*.dll", Some "lib", None) ]
         Dependencies = 
@@ -113,6 +115,7 @@ Target.create "Clean" (fun _ ->
     ++ "src/**/obj"
     ++ "test/**/bin"
     ++ "test/**/obj"
+    ++ "publish"
     |> Shell.cleanDirs 
 )
 

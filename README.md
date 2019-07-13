@@ -4,11 +4,11 @@ Irc.FSharp is an IRC client library for F#. It provides a simple framework for c
 
 ### Installation
 
-Build Irc.FSharp from the provided .sln file, `build.cmd` or `build.sh`. The solution is configured for .NET 4.5 and F# 4.1 by default.
+Build Irc.FSharp from the provided .sln file, `build.cmd` or `build.sh`. The solution is configured for .NET Core 2.2 and F# 4.6 by default.
 
 ### Getting Started
 
-Irc.FSharp supports two approaches to message processing: asynchronous and event-based. To work with single inbound messages in a non-blocking way, use `IrcClient.NextMessage()`; the `IrcClient.MessageReceived` event provides a reactive API. `IrcConnection` encapsulates an `IrcClient`, the connection state, and some common features of an IRC client:
+Irc.FSharp supports an event-based functional reactive API for processing and responding to incoming messages. Using the F# core library's `Event` and `Observable` operations allows consuming code to filter and split the stream of messages to select those relevant to a command module. `IrcClient` implements the basic functionality of an IRC network connection; `IrcConnection` encapsulates an `IrcClient`, the connection state, and some common features of an IRCv3-compliant client.
 
 ```fsharp
 #r "Irc.FSharp.dll"
@@ -24,24 +24,18 @@ module Program =
         let nick, user = Settings.Irc.Nickname, Settings.Irc.Username
         let channels = Settings.Irc.Channels
 
-        let con = new IrcConnection(host, nick, user, true, Net.Security.RemoteCertificateValidationCallback(fun _ _ _ _ -> true))
-        let client = con.Client
-
-        // Prints the client and server configuration information (as reported by the server)
-        async {
-            let! result = con.Ready |> Async.AwaitEvent
-            printfn "%A\r\n\r\n%A" (fst result) (snd result)
-        } |> Async.RunSynchronously
+        let con = new IrcConnection(host, nick, user, true)
 
         // Transform an incoming message into a response with `Event.choose`, then send it
         // Greets the user upon receiving a direct message or a mention in a channel
-        client.MessageReceived
+        con.MessageReceived
         |> Event.choose(function
             | PRIVMSG(Nickname sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
-            | PRIVMSG(Nickname sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "%s: Hello!" sender)
+            | PRIVMSG(Nickname sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "Hello %s!" sender)
             | _ -> None)
-        |> Event.add(client.WriteMessage)
+        |> Event.add(con.SendMessage)
 
+        do con.SendMessage (IrcMessage.join channels)
         Application.Run()
         0
 ```

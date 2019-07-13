@@ -1,3 +1,8 @@
+### 0.5.0 - July 12 2019
+* Updated README
+* Forwarded remaining `IrcClient` members, making them visible from `IrcConnection` API.
+* Fixed `IrcConnection.SendMessage`/`IrcConnection.SendMessageAsync` to appear as a method instead of a property.
+
 ### 0.4.0 - July 12 2019
 * Added an `IrcClient.ConnectAsync` constructor taking an `EndPoint`.
 * `IrcClient.ReadTimeout` is now in milliseconds.
