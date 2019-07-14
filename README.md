@@ -30,8 +30,10 @@ module Program =
         // Greets the user upon receiving a direct message or a mention in a channel
         con.MessageReceived
         |> Event.choose(function
-            | PRIVMSG(Nickname sender, target, message) when target = nick -> Some <| IrcMessage.privmsg [ sender ] "Hello!"
-            | PRIVMSG(Nickname sender, ch, message) -> Some <| IrcMessage.privmsg [ch] (sprintf "Hello %s!" sender)
+            | PRIVMSG(Nickname sender, target, message) when target = nick -> 
+                Some <| IrcMessage.privmsg [ sender ] "Hello!"
+            | PRIVMSG(Nickname sender, ch, message) -> 
+                Some <| IrcMessage.privmsg [ch] (sprintf "Hello %s!" sender)
             | _ -> None)
         |> Event.add(con.SendMessage)
 
