@@ -69,7 +69,7 @@ let nugetPublishParams (p: NuGet.NuGetParams) =
         OutputPath = "./publish"
         ToolPath = "nuget"
         PublishUrl = "https://api.nuget.org/v3/index.json"
-        //Publish=true
+        Publish=true
         Files = 
             [ (@"src/Irc.FSharp/bin/Release/**/*.dll", Some "lib", None) ]
         Dependencies = 
