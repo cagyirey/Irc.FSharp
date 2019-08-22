@@ -158,6 +158,7 @@ type IrcClient private (client: TcpClient, dataStream: Stream, ?certCallback: Re
 
     member this.WriteMessage(message: IrcMessage) = 
         objDisposedIf<IrcClient> disposed
+        // todo: check if message exceeds standardized max length
         message.ToString()
         |> writer.WriteLine
 

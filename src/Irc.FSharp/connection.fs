@@ -28,7 +28,7 @@ type IrcClientState = {
 
 // Tested with InspIRCd  - other daemons may not work, especially if they don't use RPL_HOSTHIDDEN
 /// Provides a high-level representation of an IRC session.
-type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCallback) as this =
+type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?serverPassword, ?validateCertCallback) as this =
 
     static let defaultServerState = {
         Name = String.Empty
@@ -151,11 +151,12 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
 
         this.ConnectAsync() |> Async.Start
 
-    new(host: string, port: int, nickname: string, ?username: string, ?useSsl: bool, ?validateCertCallback: Security.RemoteCertificateValidationCallback) = 
+    new(host: string, port: int, nickname: string, ?username: string, ?useSsl: bool, ?password, ?validateCertCallback: Security.RemoteCertificateValidationCallback) = 
         IrcConnection(DnsEndPoint(host, port),
             nickname,
             defaultArg username nickname,
             defaultArg useSsl false,
+            defaultArg password String.Empty,
             defaultArg validateCertCallback noSslErrors)
 
     // TODO: use a better ready indicator (currently: RPL_HOSTHIDDEN)
@@ -199,11 +200,19 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?validateCertCa
         |> Async.RunSynchronously
 
     member internal this.ConnectAsync () =
-        async { 
-            client.WriteMessage (Capability.Ls IRCv3Version)
+        async {
+            match serverPassword with
+            | Some password ->
+                if String.IsNullOrEmpty password then
+                    failwith "Server password cannot be a null or empty string."
+                else                
+                    do! client.WriteMessageAsync (IrcMessage.pass password)
+            | None -> ()
 
-            client.WriteMessage (IrcMessage.nick (!clientState).Nickname)
-            client.WriteMessage (IrcMessage.user (!clientState).Username "0" (!clientState).Username)
+            do! client.WriteMessageAsync (Capability.Ls IRCv3Version)
+
+            do! client.WriteMessageAsync (IrcMessage.nick (!clientState).Nickname)
+            do! client.WriteMessageAsync (IrcMessage.user (!clientState).Username "0" (!clientState).Username)
 
             do! 
                 Async.AwaitEvent (this.OnReady)
