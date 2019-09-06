@@ -5,6 +5,7 @@
 *.userosscache
 *.sln.docstates
 *.vs
+.vscode
 .DS_Store
 .ionide
 

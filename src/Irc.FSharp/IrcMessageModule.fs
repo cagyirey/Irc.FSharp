@@ -6,9 +6,8 @@ open Irc.FSharp.Parser
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module IrcMessage = 
 
-    let withPrefix (prefix: IrcPrefix) (message: IrcMessage) =
-        match message with
-        | IrcMessage(_, cmd, args) -> IrcMessage(prefix, cmd, args)
+    let (|IrcMessage|) message =
+        (message.Prefix, message.Command, message.Arguments)
 
     let (|NumericResponse|_|) (responseCode: int) (message: IrcMessage) =
         match System.Int32.TryParse message.Command with

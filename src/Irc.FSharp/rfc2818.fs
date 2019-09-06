@@ -1,121 +1,123 @@
 ﻿namespace Irc.FSharp
 
+open Irc.FSharp
+
 [<AutoOpen>]
 module RFC2812 =
 
     type IrcMessage with
 
-        static member pass password = IrcMessage(Empty, "PASS", [password])
+        static member pass password = IrcMessage.Create(Empty, "PASS", [password])
 
-        static member nick nickname = IrcMessage(Empty, "NICK", [nickname])
+        static member nick nickname = IrcMessage.Create(Empty, "NICK", [nickname])
 
-        static member user username mode realname = IrcMessage(Empty, "USER", [username; mode; "*"; realname])
+        static member user username mode realname = IrcMessage.Create(Empty, "USER", [username; mode; "*"; realname])
 
-        static member oper name password = IrcMessage(Empty, "OPER", [name; password])
+        static member oper name password = IrcMessage.Create(Empty, "OPER", [name; password])
 
-        static member mode user modes = IrcMessage(Empty, "MODE", [user; modes])
+        static member mode user modes = IrcMessage.Create(Empty, "MODE", [user; modes])
 
-        static member service nickname distribution ``type`` info = IrcMessage(Empty, "SERVICE", [nickname; "*"; distribution; ``type``; "*"; info])
+        static member service nickname distribution ``type`` info = IrcMessage.Create(Empty, "SERVICE", [nickname; "*"; distribution; ``type``; "*"; info])
 
-        static member quit ?message = IrcMessage(Empty, "QUIT", Option.toList message)
+        static member quit ?message = IrcMessage.Create(Empty, "QUIT", Option.toList message)
 
-        static member squit server comment = IrcMessage(Empty, "SQUIT", [server; comment])
+        static member squit server comment = IrcMessage.Create(Empty, "SQUIT", [server; comment])
 
-        static member join channels = IrcMessage(Empty, "JOIN", [String.concat "," channels])
+        static member join channels = IrcMessage.Create(Empty, "JOIN", [String.concat "," channels])
 
-        static member join(channels, keys) =  IrcMessage(Empty, "JOIN", [String.concat "," channels; String.concat "," keys])
+        static member join(channels, keys) =  IrcMessage.Create(Empty, "JOIN", [String.concat "," channels; String.concat "," keys])
 
-        static member part channels = IrcMessage(Empty, "PART", [String.concat "," channels])
+        static member part channels = IrcMessage.Create(Empty, "PART", [String.concat "," channels])
 
-        static member part(channels, message) = IrcMessage(Empty, "PART", [String.concat "," channels; message])
+        static member part(channels, message) = IrcMessage.Create(Empty, "PART", [String.concat "," channels; message])
 
-        static member topic channel = IrcMessage(Empty, "TOPIC", [channel])
+        static member topic channel = IrcMessage.Create(Empty, "TOPIC", [channel])
 
-        static member topic(channel, topic) = IrcMessage(Empty, "TOPIC", [channel; topic])
+        static member topic(channel, topic) = IrcMessage.Create(Empty, "TOPIC", [channel; topic])
 
-        static member names channels = IrcMessage(Empty, "NAMES", [String.concat "," channels])
+        static member names channels = IrcMessage.Create(Empty, "NAMES", [String.concat "," channels])
 
-        static member names(channels, target) = IrcMessage(Empty, "NAMES", String.concat "," channels :: Option.toList target)
+        static member names(channels, target) = IrcMessage.Create(Empty, "NAMES", String.concat "," channels :: Option.toList target)
 
-        static member list channels = IrcMessage(Empty, "LIST",  [String.concat "," channels])
+        static member list channels = IrcMessage.Create(Empty, "LIST",  [String.concat "," channels])
 
-        static member list(channels, target) = IrcMessage(Empty, "LIST",  [String.concat "," channels; target])
+        static member list(channels, target) = IrcMessage.Create(Empty, "LIST",  [String.concat "," channels; target])
 
-        static member invite nickname channel = IrcMessage(Empty, "INVITE", [nickname; channel])
+        static member invite nickname channel = IrcMessage.Create(Empty, "INVITE", [nickname; channel])
 
-        static member kick channels users = IrcMessage(Empty, "KICK", [String.concat "," channels; String.concat "," users])
+        static member kick channels users = IrcMessage.Create(Empty, "KICK", [String.concat "," channels; String.concat "," users])
 
-        static member privmsg recipients message = IrcMessage(Empty, "PRIVMSG", [String.concat "," recipients; message])
+        static member privmsg recipients message = IrcMessage.Create(Empty, "PRIVMSG", [String.concat "," recipients; message])
 
-        static member notice msgtarget text = IrcMessage(Empty, "NOTICE", [msgtarget; text])
+        static member notice msgtarget text = IrcMessage.Create(Empty, "NOTICE", [msgtarget; text])
 
-        static member motd ?target = IrcMessage(Empty, "MOTD", Option.toList target)
+        static member motd ?target = IrcMessage.Create(Empty, "MOTD", Option.toList target)
 
-        static member lusers () = IrcMessage(Empty, "LUSERS", [])
+        static member lusers () = IrcMessage.Create(Empty, "LUSERS", [])
 
-        static member lusers mask = IrcMessage(Empty, "LUSERS", [mask])
+        static member lusers mask = IrcMessage.Create(Empty, "LUSERS", [mask])
 
-        static member lusers (mask, target) = IrcMessage(Empty, "LUSERS", [mask; target])
+        static member lusers (mask, target) = IrcMessage.Create(Empty, "LUSERS", [mask; target])
 
-        static member version ?target = IrcMessage(Empty, "VERSION", Option.toList target)
+        static member version ?target = IrcMessage.Create(Empty, "VERSION", Option.toList target)
 
-        static member stats () = IrcMessage(Empty, "STATS", [])
+        static member stats () = IrcMessage.Create(Empty, "STATS", [])
 
-        static member stats query = IrcMessage(Empty, "STATS", [query])
+        static member stats query = IrcMessage.Create(Empty, "STATS", [query])
 
-        static member stats (query, target) = IrcMessage(Empty, "STATS", [query; target])
+        static member stats (query, target) = IrcMessage.Create(Empty, "STATS", [query; target])
 
-        static member links () = IrcMessage(Empty, "LINKS", [])
+        static member links () = IrcMessage.Create(Empty, "LINKS", [])
 
-        static member links remoteServer = IrcMessage(Empty, "LINKS", [remoteServer])
+        static member links remoteServer = IrcMessage.Create(Empty, "LINKS", [remoteServer])
 
-        static member links (remoteServer, serverMask) = IrcMessage(Empty, "LINKS", [remoteServer; serverMask])
+        static member links (remoteServer, serverMask) = IrcMessage.Create(Empty, "LINKS", [remoteServer; serverMask])
 
-        static member time ?target = IrcMessage(Empty, "TIME", Option.toList target)
+        static member time ?target = IrcMessage.Create(Empty, "TIME", Option.toList target)
 
-        static member connect (targetServer, port) = IrcMessage(Empty, "CONNECT", [targetServer; port])
+        static member connect (targetServer, port) = IrcMessage.Create(Empty, "CONNECT", [targetServer; port])
 
-        static member connect (targetServer, port, remoteServer) = IrcMessage(Empty, "CONNECT", [targetServer; port; remoteServer])
+        static member connect (targetServer, port, remoteServer) = IrcMessage.Create(Empty, "CONNECT", [targetServer; port; remoteServer])
 
-        static member trace ?target = IrcMessage(Empty, "TRACE", Option.toList target)
+        static member trace ?target = IrcMessage.Create(Empty, "TRACE", Option.toList target)
 
-        static member admin ?target = IrcMessage(Empty, "ADMIN", Option.toList target)
+        static member admin ?target = IrcMessage.Create(Empty, "ADMIN", Option.toList target)
 
-        static member info ?target = IrcMessage(Empty, "INFO", Option.toList target)
+        static member info ?target = IrcMessage.Create(Empty, "INFO", Option.toList target)
 
-        static member servlist () = IrcMessage(Empty, "SERVLIST", [])
+        static member servlist () = IrcMessage.Create(Empty, "SERVLIST", [])
 
-        static member servlist mask = IrcMessage(Empty, "SERVLIST", [mask])
+        static member servlist mask = IrcMessage.Create(Empty, "SERVLIST", [mask])
 
-        static member servlist (mask, ``type``) = IrcMessage(Empty, "SERVLIST", [mask; ``type``])
+        static member servlist (mask, ``type``) = IrcMessage.Create(Empty, "SERVLIST", [mask; ``type``])
 
-        static member squery servicename text = IrcMessage(Empty, "SQUERY", [servicename; text])
+        static member squery servicename text = IrcMessage.Create(Empty, "SQUERY", [servicename; text])
 
-        static member who mask = IrcMessage(Empty, "WHO", [mask])
+        static member who mask = IrcMessage.Create(Empty, "WHO", [mask])
 
-        static member who (mask, operatorsOnly) = IrcMessage(Empty, "WHO", mask :: if operatorsOnly then ["o"] else [])
+        static member who (mask, operatorsOnly) = IrcMessage.Create(Empty, "WHO", mask :: if operatorsOnly then ["o"] else [])
 
-        static member whois mask = IrcMessage(Empty, "WHOIS", [mask])
+        static member whois mask = IrcMessage.Create(Empty, "WHOIS", [mask])
 
-        static member whois masks = IrcMessage(Empty, "WHOIS", [String.concat "," masks])
+        static member whois masks = IrcMessage.Create(Empty, "WHOIS", [String.concat "," masks])
 
-        static member whois (target, masks) = IrcMessage(Empty, "WHOIS", [target; String.concat "," masks])
+        static member whois (target, masks) = IrcMessage.Create(Empty, "WHOIS", [target; String.concat "," masks])
 
-        static member whowas nicknames = IrcMessage(Empty, "WHOWAS", [String.concat "," nicknames])
+        static member whowas nicknames = IrcMessage.Create(Empty, "WHOWAS", [String.concat "," nicknames])
 
-        static member whowas (nicknames, count) = IrcMessage(Empty, "WHOWAS", [String.concat "," nicknames; count])
+        static member whowas (nicknames, count) = IrcMessage.Create(Empty, "WHOWAS", [String.concat "," nicknames; count])
 
-        static member whowas (nicknames, count, target) = IrcMessage(Empty, "WHOWAS", [String.concat "," nicknames; count; target])
+        static member whowas (nicknames, count, target) = IrcMessage.Create(Empty, "WHOWAS", [String.concat "," nicknames; count; target])
 
-        static member kill nickname comment = IrcMessage(Empty, "KILL", [nickname; comment])
+        static member kill nickname comment = IrcMessage.Create(Empty, "KILL", [nickname; comment])
 
-        static member ping server1 = IrcMessage(Empty, "PING", [server1])
+        static member ping server1 = IrcMessage.Create(Empty, "PING", [server1])
 
-        static member ping(server1, server2) = IrcMessage(Empty, "PING", [server1; server2])
+        static member ping(server1, server2) = IrcMessage.Create(Empty, "PING", [server1; server2])
 
-        static member pong server1 = IrcMessage(Empty, "PONG", [server1])
+        static member pong server1 = IrcMessage.Create(Empty, "PONG", [server1])
 
-        static member pong(server1, server2) = IrcMessage(Empty, "PONG", [server1; server2])
+        static member pong(server1, server2) = IrcMessage.Create(Empty, "PONG", [server1; server2])
 
     let inline private (%=) (str1: string) (str2: string) = str1.Equals(str2, System.StringComparison.CurrentCultureIgnoreCase)
 

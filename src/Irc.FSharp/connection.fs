@@ -89,7 +89,7 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?serverPassword
             clientState :=
                 { !clientState with
                     Capabilities = addClientCapabilities capabilities }
-                    
+
         | IRCv3.Capability "LS" capabilities ->
             serverState :=
                 { !serverState with
@@ -98,16 +98,17 @@ type IrcConnection(host: EndPoint, nickname, ?username, ?useSsl, ?serverPassword
         | _ -> ()        
 
     let handleClientStateChange state = function
-    | NumericResponse (int ResponseCode.RPL_YOURID) [_; id; _] -> 
-        state := 
-            { !state with
-                UniqueId = Some id }
-    | NumericResponse (int ResponseCode.RPL_HOSTHIDDEN) [_; mask; _]  ->
-        state := 
-            { !state with
-                HostMask = mask }
-        onReadyInternal.Trigger ()
-    | _ -> ()
+        | NumericResponse (int ResponseCode.RPL_YOURID) [_; id; _] -> 
+            state := 
+                { !state with
+                    UniqueId = Some id }
+
+        | NumericResponse (int ResponseCode.RPL_HOSTHIDDEN) [_; mask; _]  ->
+            state := 
+                { !state with
+                    HostMask = mask }
+            onReadyInternal.Trigger ()
+        | _ -> ()
 
     let handleServerStateChange state = function
         | NumericResponse (int ResponseCode.RPL_ISUPPORT) (_ :: features) -> 

@@ -1,6 +1,7 @@
 ﻿namespace Irc.FSharp
 
 open System
+open System.Collections.Generic
 open System.Text
 
 open Microsoft.FSharp.Core.Printf
@@ -40,10 +41,15 @@ module IrcPrefix =
         | User(_, _, Some hostmask) -> Some hostmask
         | _ -> None
 
-type IrcMessage = 
-    | IrcMessage of prefix: IrcPrefix * cmd: string * args: string list
-
+type IrcMessage = {
+    Tags: IDictionary<string, string option>
+    Prefix: IrcPrefix
+    Command: string
+    Arguments: string list
+} with
     override this.ToString() = 
+        (* let concatTags tags =
+            let rec loop tags = *)
         let concatMessageArgs args = 
             let sb = StringBuilder()
             let rec loop args = 
@@ -62,20 +68,14 @@ type IrcMessage =
             | Empty -> String.Empty
             | pfx -> sprintf ":%O " pfx
 
-        match this with
-        | IrcMessage(_, cmd, []) ->
-            sprintf "%s%s" prefix cmd
-        | IrcMessage(_, cmd, args) -> 
-            sprintf "%s%s %s" prefix cmd (concatMessageArgs args)
+        match this.Arguments with
+        | [] ->
+            sprintf "%s%s" prefix this.Command
+        | args -> 
+            sprintf "%s%s %s" prefix this.Command (concatMessageArgs args)
 
-    member this.Prefix : IrcPrefix = 
-        match this with
-        | IrcMessage(prefix, _, _) -> prefix
-
-    member this.Command = 
-        match this with
-        | IrcMessage(_, cmd, _) -> cmd
-
-    member this.Arguments = 
-        match this with
-        | IrcMessage(_, _, args) -> args
+    static member Create(prefix, command, args, ?tags) =
+        { Tags = defaultArg tags (dict [])
+          Prefix = prefix
+          Command = command
+          Arguments = args }

@@ -12,7 +12,7 @@ module IRCv3 =
 
     module Capability =
 
-        let internal capability subcommand args = IrcMessage(Empty, "CAP", subcommand :: args)
+        let internal capability subcommand args = IrcMessage.Create(Empty, "CAP", subcommand :: args)
 
         let Ls version = capability "LS" [version]
 

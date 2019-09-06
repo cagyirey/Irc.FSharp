@@ -19,6 +19,16 @@ module internal Parser =
         let inline isAlphanumOrSpecial c =
             isLetterOrSpecial c || isDigit c
 
+        let ircv3tag = 
+            many1Chars(noneOf "= ") 
+            .>>. opt (skipChar '=' >>. manyChars (noneOf ";"))
+        
+        let ircv3tags = 
+            opt (skipChar '@' >>. sepBy1 ircv3tag (skipChar ';'))
+            |>> function
+                | Some tags -> dict tags
+                | None -> dict []
+
         // strict irc grammar for nickSegment: many1Satisfy2 (isAlphanumOrSpecial) (isNoneOf "!@. ") .>> (nextCharSatisfies ((<>) '.') <|> eof)
         let nickSegment = many1Chars (noneOf " .:!@\r\n") .>> (nextCharSatisfies ((<>) '.') <|> eof) 
         let userSegment = skipChar '!' >>. many1Satisfy(isNoneOf "@ ")
@@ -31,12 +41,18 @@ module internal Parser =
         let recipient = choice [|attempt channelRecipient; attempt userRecipient; attempt serverRecipient;|]
         let recipients = sepBy1 recipient (skipChar ',') .>> spaces1
 
-        let messagePrefix = skipChar ':' >>. recipient .>> spaces1
+        let messagePrefix = 
+            opt (skipChar ':' >>. recipient .>> spaces1)
+            |>> (fun prefix -> defaultArg prefix Empty)
+            
         let ircCommand = many1Chars asciiLetter <|> manyMinMaxSatisfy 3 3 isDigit .>> spaces
         let middleParam = nextCharSatisfies ((<>) ':') >>. word .>> spaces
         let tailParam = skipChar ':' >>. restOfLine false
         let paramArray = many (middleParam <|> tailParam)
-        let message = tuple3 (opt messagePrefix |>> Option.fold (fun _ prefix -> prefix) Empty) ircCommand paramArray |>> IrcMessage
+        let message = 
+            tuple4 ircv3tags messagePrefix ircCommand paramArray
+            |>> (fun (tags, prefix, command, args) ->
+                 IrcMessage.Create(prefix, command, args, tags))
 
     let internal tryUnboxParserResult result = 
         match result with

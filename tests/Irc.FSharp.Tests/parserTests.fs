@@ -36,7 +36,7 @@ module Tests =
         [<Test>]
         let ``Can construct a PRIVMSG with the IrcMessage union type`` () =
             let message = 
-                IrcMessage(
+                IrcMessage.Create(
                     User("nickname", Some "username", Some "host.mask"),
                     "PRIVMSG",
                     ["#channel1"; "hello"])
@@ -46,7 +46,9 @@ module Tests =
         [<Test>]
         let ``Can construct a PRIVMSG with the privmsg function`` () =
             let message = 
-                IrcMessage.privmsg ["#channel1"] "hello"
-                |> IrcMessage.withPrefix (User("nickname", Some "username", Some "host.mask"))
+                { IrcMessage.privmsg ["#channel1"] "hello" 
+                    with
+                        Prefix = (User("nickname", Some "username", Some "host.mask"))
+                }                
 
             message |> should equal (IrcMessage.Parse rawPrivmsg)
