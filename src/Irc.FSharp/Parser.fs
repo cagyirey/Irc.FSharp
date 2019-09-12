@@ -7,7 +7,7 @@ module internal Parser =
     open FParsec
 
     [<AutoOpen>]
-    module internal Internal = 
+    module private Internal = 
         let word = many1Satisfy ((<>) ' ')
 
         let inline isSpecial c = 
@@ -20,15 +20,15 @@ module internal Parser =
             isLetterOrSpecial c || isDigit c
 
         let ircv3tag = 
-            many1Chars(noneOf "= ") 
-            .>>. opt (skipChar '=' >>. manyChars (noneOf ";"))
+            many1Chars(noneOf "=; ") 
+            .>>. opt (skipChar '=' >>. manyChars (noneOf "; "))
         
         let ircv3tags = 
-            opt (skipChar '@' >>. sepBy1 ircv3tag (skipChar ';'))
+            opt (skipChar '@' >>. sepBy1 ircv3tag (skipChar ';') .>> spaces1)
             |>> function
-                | Some tags -> dict tags
-                | None -> dict []
-
+                | Some tags -> Map.ofList tags
+                | None -> Map.empty
+            
         // strict irc grammar for nickSegment: many1Satisfy2 (isAlphanumOrSpecial) (isNoneOf "!@. ") .>> (nextCharSatisfies ((<>) '.') <|> eof)
         let nickSegment = many1Chars (noneOf " .:!@\r\n") .>> (nextCharSatisfies ((<>) '.') <|> eof) 
         let userSegment = skipChar '!' >>. many1Satisfy(isNoneOf "@ ")
@@ -54,12 +54,12 @@ module internal Parser =
             |>> (fun (tags, prefix, command, args) ->
                  IrcMessage.Create(prefix, command, args, tags))
 
-    let internal tryUnboxParserResult result = 
+    let private tryUnboxParserResult result = 
         match result with
         | ParserResult.Success(res, _, _) -> Result.Ok res
         | ParserResult.Failure(_, err : ParserError, _) -> Result.Error (err.Messages.ToString() |> exn)
 
-    let internal unboxParserResult result =
+    let private unboxParserResult result =
         match result with
         | ParserResult.Success(r, _, _) -> r
         | ParserResult.Failure(reason, _, _) -> invalidArg "result" reason

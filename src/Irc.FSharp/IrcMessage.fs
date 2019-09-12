@@ -1,7 +1,6 @@
 ﻿namespace Irc.FSharp
 
 open System
-open System.Collections.Generic
 open System.Text
 
 open Microsoft.FSharp.Core.Printf
@@ -42,40 +41,56 @@ module IrcPrefix =
         | _ -> None
 
 type IrcMessage = {
-    Tags: IDictionary<string, string option>
+    Tags: Map<string, string option>
     Prefix: IrcPrefix
     Command: string
     Arguments: string list
 } with
     override this.ToString() = 
-        (* let concatTags tags =
-            let rec loop tags = *)
-        let concatMessageArgs args = 
-            let sb = StringBuilder()
+        let sb = StringBuilder()
+        
+        let appendTags tags =
+            let rec loop tags =
+                match tags with
+                | [(key, None)] ->
+                    bprintf sb "%s " key
+                | [(key, Some value)] ->
+                    bprintf sb "%s=%s " key value 
+                | (key, None) :: rest ->
+                    bprintf sb "%s;" key
+                    loop rest
+                | (key, Some value) :: rest ->
+                    bprintf sb "%s=%s;" key value
+                    loop rest
+                | [] -> ()
+
+            if not (Map.isEmpty tags) then
+                sb.Append '@' |> ignore
+                loop (Map.toList tags)              
+
+        let appendMessageArgs args = 
             let rec loop args = 
                 match args with
                 | [ singleArg ] -> 
                     bprintf sb ":%s" singleArg
-                    sb.ToString()
                 | arg :: rest -> 
                     bprintf sb "%s " arg
                     loop rest
-                | [] -> sb.ToString()
+                | [] -> ()
             loop args
 
-        let prefix =
-            match this.Prefix with
-            | Empty -> String.Empty
-            | pfx -> sprintf ":%O " pfx
+        appendTags this.Tags
 
-        match this.Arguments with
-        | [] ->
-            sprintf "%s%s" prefix this.Command
-        | args -> 
-            sprintf "%s%s %s" prefix this.Command (concatMessageArgs args)
+        match this.Prefix with
+        | Empty -> ()
+        | pfx -> bprintf sb ":%O " pfx
+
+        bprintf sb "%s " this.Command
+        appendMessageArgs this.Arguments
+        sb.ToString()
 
     static member Create(prefix, command, args, ?tags) =
-        { Tags = defaultArg tags (dict [])
+        { Tags = defaultArg tags Map.empty
           Prefix = prefix
           Command = command
           Arguments = args }
